@@ -55,9 +55,9 @@ class RuleTest(unittest.TestCase):
         self.assertEqual('any', r.external_port)
 
     def test_7(self):
-        r = Rule('   drop tcp any   80  ')
+        r = Rule('   pass tcp any   80  ')
         self.assertEqual(RULE_TYPE_PIP, r.type)
-        self.assertEqual('drop', r.verdict)
+        self.assertEqual('pass', r.verdict)
         self.assertEqual('tcp', r.protocol)
         self.assertEqual('any', r.external_ip)
         self.assertEqual('80', r.external_port)
@@ -79,6 +79,85 @@ class RuleTest(unittest.TestCase):
 
     def test_10(self):
         r = Rule('drop dns *.stanford.edu')
+        self.assertEqual(RULE_TYPE_DNS, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('dns', r.protocol)
+        self.assertEqual('*.stanford.edu', r.domain_name)
+
+class RulesTest(unittest.TestCase):
+    def setUp(self):
+        self.rules = Rules(filename='rules.conf')
+
+    def test_basic(self):
+        pass
+
+    def test_rule_count(self):
+        self.assertEqual(10, self.rules.rules.__len__())
+
+    def test_rules_are_correct(self):
+        r = self.rules.rules[0]
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('icmp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('any', r.external_port)
+
+        r = self.rules.rules[1]
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('pass', r.verdict)
+        self.assertEqual('icmp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('0', r.external_port)
+
+        r = self.rules.rules[2]
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('pass', r.verdict)
+        self.assertEqual('icmp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('8', r.external_port)
+
+        r = self.rules.rules[3]
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('udp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('any', r.external_port)
+
+        r = self.rules.rules[4]
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('pass', r.verdict)
+        self.assertEqual('udp', r.protocol)
+        self.assertEqual('8.8.8.8', r.external_ip)
+        self.assertEqual('53', r.external_port)
+
+        r = self.rules.rules[5]
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('tcp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('any', r.external_port)
+
+        r = self.rules.rules[6]
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('pass', r.verdict)
+        self.assertEqual('tcp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('80', r.external_port)
+
+        r = self.rules.rules[7]
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('tcp', r.protocol)
+        self.assertEqual('au', r.external_ip)
+        self.assertEqual('any', r.external_port)
+
+        r = self.rules.rules[8]
+        self.assertEqual(RULE_TYPE_DNS, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('dns', r.protocol)
+        self.assertEqual('stanford.edu', r.domain_name)
+
+        r = self.rules.rules[9]
         self.assertEqual(RULE_TYPE_DNS, r.type)
         self.assertEqual('drop', r.verdict)
         self.assertEqual('dns', r.protocol)

@@ -29,6 +29,18 @@ class Firewall:
 
 # TODO: You may want to add more classes/functions as well.
 
+# Class that imports lines from a file
+class LineImporter(object):
+    def import_filename(self, filename):
+        with open(filename) as f:
+            lines = f.readlines()
+            # Get rid of newlines
+            lines = [line.strip('\n') for line in lines]
+            # Get rid of extra spaces
+            lines = [' '.join(line.split()) for line in lines]
+            # Store this
+            self.lines = lines
+
 # Rule class
 
 RULE_TYPE_PIP = 'RULE_TYPE_PIP'
@@ -60,8 +72,23 @@ class Rule:
             self.type = RULE_TYPE_PIP
             self.external_ip = rule_comps[RULE_EXTERNAL_IP]
             self.external_port = rule_comps[RULE_EXTERNAL_PORT]
-        
 
+class Rules(LineImporter):
+    def __init__(self, filename):
+        self.rules = []
+        # Call the import function
+        super(Rules, self).import_filename(filename)
+        # Convert these line strings to a list of rules
+        for line in self.lines:
+            # Ignore empty lines
+            if len(line) == 0:
+                continue
+            # Ignore comment lines
+            if line[0] == '%':
+                continue
+            # Create the rule
+            rule = Rule(rule_line=line)
+            self.rules.append(rule)
 
 
 # GeoIPDB class
@@ -71,24 +98,17 @@ GEOIPDB_ENDING_IP = 1
 GEOIPDB_COUNTRY_CODE = 2
 GEOIPDB_CODE_NOT_FOUND = 'GEOIPDB_CODE_NOT_FOUND'
 
-class GeoIPDB:
+class GeoIPDB(LineImporter):
 
     def __init__(self, filename):
         # We will store the DB file using a list and dictionary
         self.list = []
         self.hash = {}
 
-        # Import the DB File
-        self.import_filename(filename)
-
-    def import_filename(self, filename):
-        # Get a list of all the tuples
-        with open(filename) as f:
-            lines = f.readlines()
-            lines = [line.strip('\n') for line in lines]
-        
+        # Call the import function
+        super(GeoIPDB, self).import_filename(filename)
         # Convert these line strings to list and dictionary
-        for line in lines:
+        for line in self.lines:
             line_tuple = line.split(" ")
             self.list.append(line_tuple)
             country_code = line_tuple[GEOIPDB_COUNTRY_CODE]
@@ -96,6 +116,7 @@ class GeoIPDB:
                 self.hash[country_code] = []
             # Append lines
             self.hash[country_code].append(line_tuple)
+        
 
     def compareIP(self, ip1, ip2):
         """
