@@ -11,25 +11,28 @@ class Firewall:
         self.iface_int = iface_int
         self.iface_ext = iface_ext
 
-        # TODO: Load the firewall rules (from rule_filename) here.
-        print 'I am supposed to load rules from %s, but I am feeling lazy.' % \
-                config['rule']
-
         # TODO: Load the GeoIP DB ('geoipdb.txt') as well.
-        self.geoDB = GeoIPDB(filename='geoipdb.txt')
-        # TODO: Also do some initialization if needed.
+        geoipdb_filename = 'geoipdb.txt'
+        geoDB = GeoIPDB(filename=geoipdb_filename)
+
+        # TODO: Load the firewall rules (from rule_filename) here.
+        rule_filename = config['rule']
+        self.rules = Rules(filename=rule_filename, geoipdb=geoDB)
 
     # @pkt_dir: either PKT_DIR_INCOMING or PKT_DIR_OUTGOING
     # @pkt: the actual data of the IPv4 packet (including IP header)
     def handle_packet(self, pkt_dir, pkt):
-        # TODO: Your main firewall code will be here.
-        pass
+        result = self.rules.result_for_pkt(pkt)
+        if result == RULE_RESULT_PASS:
+            if pkt_dir == PKT_DIR_INCOMING:
+                self.iface_int.send_ip_packet(pkt)
+            elif pkt_dir == PKT_DIR_OUTGOING:
+                self.iface_ext.send_ip_packet(pkt)
 
-    # TODO: You can add more methods as you want.
+"""
+Importing from file
+"""
 
-# TODO: You may want to add more classes/functions as well.
-
-# Class that imports lines from a file
 class LineImporter(object):
     def import_filename(self, filename):
         with open(filename) as f:
@@ -41,7 +44,9 @@ class LineImporter(object):
             # Store this
             self.lines = lines
 
-# Rule class
+"""
+Rules
+"""
 
 RULE_TYPE_PIP = 'RULE_TYPE_PIP'
 RULE_TYPE_DNS = 'RULE_TYPE_DNS'
@@ -53,6 +58,9 @@ RULE_PROTOCOL = 1
 RULE_EXTERNAL_IP = 2
 RULE_EXTERNAL_PORT = 3
 RULE_DOMAIN_NAME = 2
+
+RULE_RESULT_PASS = 'pass'
+RULE_RESULT_DROP = 'drop'
 
 class Rule:
     def __init__(self, rule_line):
@@ -74,7 +82,9 @@ class Rule:
             self.external_port = rule_comps[RULE_EXTERNAL_PORT]
 
 class Rules(LineImporter):
-    def __init__(self, filename):
+
+    def __init__(self, filename, geoipdb = None):
+        self.geoipdb = geoipdb
         self.rules = []
         # Call the import function
         super(Rules, self).import_filename(filename)
@@ -89,9 +99,16 @@ class Rules(LineImporter):
             # Create the rule
             rule = Rule(rule_line=line)
             self.rules.append(rule)
+        # Invert the list, since the last rules hold priority
+        self.rules = self.rules[::-1]
+
+    def result_for_pkt(self, pkt):
+        return RULE_RESULT_DROP
 
 
-# GeoIPDB class
+"""
+GeoIPDB
+"""
 
 GEOIPDB_STARTING_IP = 0
 GEOIPDB_ENDING_IP = 1

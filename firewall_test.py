@@ -94,70 +94,70 @@ class RulesTest(unittest.TestCase):
     def test_rule_count(self):
         self.assertEqual(10, self.rules.rules.__len__())
 
-    def test_rules_are_correct(self):
-        r = self.rules.rules[0]
+    def test_rules_are_inverted_in_list(self):
+        r = self.rules.rules[9]
         self.assertEqual(RULE_TYPE_PIP, r.type)
         self.assertEqual('drop', r.verdict)
         self.assertEqual('icmp', r.protocol)
         self.assertEqual('any', r.external_ip)
         self.assertEqual('any', r.external_port)
 
-        r = self.rules.rules[1]
+        r = self.rules.rules[8]
         self.assertEqual(RULE_TYPE_PIP, r.type)
         self.assertEqual('pass', r.verdict)
         self.assertEqual('icmp', r.protocol)
         self.assertEqual('any', r.external_ip)
         self.assertEqual('0', r.external_port)
 
-        r = self.rules.rules[2]
+        r = self.rules.rules[7]
         self.assertEqual(RULE_TYPE_PIP, r.type)
         self.assertEqual('pass', r.verdict)
         self.assertEqual('icmp', r.protocol)
         self.assertEqual('any', r.external_ip)
         self.assertEqual('8', r.external_port)
 
-        r = self.rules.rules[3]
+        r = self.rules.rules[6]
         self.assertEqual(RULE_TYPE_PIP, r.type)
         self.assertEqual('drop', r.verdict)
         self.assertEqual('udp', r.protocol)
         self.assertEqual('any', r.external_ip)
         self.assertEqual('any', r.external_port)
 
-        r = self.rules.rules[4]
+        r = self.rules.rules[5]
         self.assertEqual(RULE_TYPE_PIP, r.type)
         self.assertEqual('pass', r.verdict)
         self.assertEqual('udp', r.protocol)
         self.assertEqual('8.8.8.8', r.external_ip)
         self.assertEqual('53', r.external_port)
 
-        r = self.rules.rules[5]
+        r = self.rules.rules[4]
         self.assertEqual(RULE_TYPE_PIP, r.type)
         self.assertEqual('drop', r.verdict)
         self.assertEqual('tcp', r.protocol)
         self.assertEqual('any', r.external_ip)
         self.assertEqual('any', r.external_port)
 
-        r = self.rules.rules[6]
+        r = self.rules.rules[3]
         self.assertEqual(RULE_TYPE_PIP, r.type)
         self.assertEqual('pass', r.verdict)
         self.assertEqual('tcp', r.protocol)
         self.assertEqual('any', r.external_ip)
         self.assertEqual('80', r.external_port)
 
-        r = self.rules.rules[7]
+        r = self.rules.rules[2]
         self.assertEqual(RULE_TYPE_PIP, r.type)
         self.assertEqual('drop', r.verdict)
         self.assertEqual('tcp', r.protocol)
         self.assertEqual('au', r.external_ip)
         self.assertEqual('any', r.external_port)
 
-        r = self.rules.rules[8]
+        r = self.rules.rules[1]
         self.assertEqual(RULE_TYPE_DNS, r.type)
         self.assertEqual('drop', r.verdict)
         self.assertEqual('dns', r.protocol)
         self.assertEqual('stanford.edu', r.domain_name)
 
-        r = self.rules.rules[9]
+        r = self.rules.rules[0]
         self.assertEqual(RULE_TYPE_DNS, r.type)
         self.assertEqual('drop', r.verdict)
         self.assertEqual('dns', r.protocol)
