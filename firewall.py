@@ -29,6 +29,41 @@ class Firewall:
 
 # TODO: You may want to add more classes/functions as well.
 
+# Rule class
+
+RULE_TYPE_PIP = 'RULE_TYPE_PIP'
+RULE_TYPE_DNS = 'RULE_TYPE_DNS'
+
+RULE_PROTOCOL_DNS = 'dns'
+
+RULE_VERDICT = 0
+RULE_PROTOCOL = 1
+RULE_EXTERNAL_IP = 2
+RULE_EXTERNAL_PORT = 3
+RULE_DOMAIN_NAME = 2
+
+class Rule:
+    def __init__(self, rule_line):
+        # To get rid of multiple white spaces
+        rule_line = ' '.join(rule_line.split())
+        rule_comps = rule_line.split(" ")
+        # Get the verdict
+        self.verdict = rule_comps[RULE_VERDICT]
+        # Get the protocol
+        self.protocol = rule_comps[RULE_PROTOCOL]
+
+        # Handle differently for dns / pip
+        if self.protocol == RULE_PROTOCOL_DNS:
+            self.type = RULE_TYPE_DNS
+            self.domain_name = rule_comps[RULE_DOMAIN_NAME]
+        else:
+            self.type = RULE_TYPE_PIP
+            self.external_ip = rule_comps[RULE_EXTERNAL_IP]
+            self.external_port = rule_comps[RULE_EXTERNAL_PORT]
+        
+
+
+
 # GeoIPDB class
 
 GEOIPDB_STARTING_IP = 0

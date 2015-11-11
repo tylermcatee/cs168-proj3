@@ -1,6 +1,89 @@
 import unittest
 from firewall import *
 
+class RuleTest(unittest.TestCase):
+    """
+    Manually make sure all the lines from the given rules.conf
+    work correctly.
+    """
+    def test_1(self):
+        r = Rule('drop icmp any any')
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('icmp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('any', r.external_port)
+
+    def test_2(self):
+        r = Rule('pass icmp any 0')
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('pass', r.verdict)
+        self.assertEqual('icmp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('0', r.external_port)
+
+    def test_3(self):
+        r = Rule('pass icmp any 8')
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('pass', r.verdict)
+        self.assertEqual('icmp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('8', r.external_port)
+
+    def test_4(self):
+        r = Rule('drop udp any any')
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('udp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('any', r.external_port)
+
+    def test_5(self):
+        r = Rule('pass udp 8.8.8.8 53')
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('pass', r.verdict)
+        self.assertEqual('udp', r.protocol)
+        self.assertEqual('8.8.8.8', r.external_ip)
+        self.assertEqual('53', r.external_port)
+
+    def test_6(self):
+        r = Rule('drop tcp any any')
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('tcp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('any', r.external_port)
+
+    def test_7(self):
+        r = Rule('   drop tcp any   80  ')
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('tcp', r.protocol)
+        self.assertEqual('any', r.external_ip)
+        self.assertEqual('80', r.external_port)
+
+    def test_8(self):
+        r = Rule('drop tcp au any  ')
+        self.assertEqual(RULE_TYPE_PIP, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('tcp', r.protocol)
+        self.assertEqual('au', r.external_ip)
+        self.assertEqual('any', r.external_port)
+
+    def test_9(self):
+        r = Rule('drop dns   stanford.edu')
+        self.assertEqual(RULE_TYPE_DNS, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('dns', r.protocol)
+        self.assertEqual('stanford.edu', r.domain_name)
+
+    def test_10(self):
+        r = Rule('drop dns *.stanford.edu')
+        self.assertEqual(RULE_TYPE_DNS, r.type)
+        self.assertEqual('drop', r.verdict)
+        self.assertEqual('dns', r.protocol)
+        self.assertEqual('*.stanford.edu', r.domain_name)
+
 class GeoIPDBTest(unittest.TestCase):
     def setUp(self):
         self.g = GeoIPDB(filename='geoipdb.txt')
