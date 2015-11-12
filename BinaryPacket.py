@@ -68,7 +68,7 @@ class BinaryPacket:
         return pack('!HHHH', self.udp_source, self.udp_dest, self.udp_len, self.udp_check)
 
     def get_icmp_header(self):
-        return pack('!HHHH', self.icmp_type, self.icmp_code, self.icmp_checksum, self.icmp_other)
+        return pack('!BBHL', self.icmp_type, self.icmp_code, self.icmp_checksum, self.icmp_other)
 
     # Construct the packets
     def get_tcp_packet(self):
@@ -79,5 +79,5 @@ class BinaryPacket:
         return self.get_ip_header() + self.get_udp_header()
     def get_icmp_packet(self):
         self.ip_proto = socket.IPPROTO_ICMP
-        return self.get_ip_header() + self.get_udp_header()
+        return self.get_ip_header() + self.get_icmp_header()
 

@@ -151,7 +151,11 @@ class Packet:
         if not self.src_port:
             protocol = self.get_protocol()
             if protocol == socket.IPPROTO_TCP or protocol == socket.IPPROTO_UDP:
-                self.src_port = struct.unpack('!H', self.pkt[20:22])[0]
+                if self.pkt_dir == PKT_DIR_INCOMING:
+                    self.src_port = struct.unpack('!H', self.pkt[20:22])[0]
+                else:
+                    self.src_port = struct.unpack('!H', self.pkt[22:24])[0]
+
             elif protocol == socket.IPPROTO_ICMP:
                 self.src_port = struct.unpack('!B', self.pkt[20:21])[0]
             else:
