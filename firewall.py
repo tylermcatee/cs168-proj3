@@ -101,6 +101,7 @@ class Packet:
         self.protocol_string = None
         self.src_ip = None
         self.country_code = None
+        self.src_port = None
 
     def protocol_number_to_string(self, protocol_number):
         if protocol_number == socket.IPPROTO_TCP:
@@ -138,6 +139,11 @@ class Packet:
         if not self.country_code:
             self.country_code = self.geoDB.country_code(self.get_src_ip()).lower()
         return self.country_code
+
+    def get_src_port(self):
+        if not self.src_port:
+            self.src_port = struct.unpack('!H', self.pkt[20:22])
+        return self.src_port
 
 """
 Rules
@@ -225,10 +231,17 @@ class Rule:
             # We are specified by an IP Address
             else:
                 if src_ip != self.external_ip:
-                    print("%s != %s" % (src_ip, self.external_ip))
                     return False
 
-        return False
+        # If the external port is any, don't do this check
+        if self.external_port != RULE_ANY:
+            src_port = packet.get_src_port()
+            print("Need to look at port %s" % src_port)
+            return False
+
+        print("RULE APPLIES: %s %s %s %s" % (self.verdict, self.protocol, self.external_ip, self.external_port))
+
+        return True 
 
 
 class Rules(LineImporter):

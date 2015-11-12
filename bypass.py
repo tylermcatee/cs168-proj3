@@ -12,7 +12,6 @@ class Firewall:
         self.iface_ext = iface_ext
 
         print 'bypass mode!'
-        print 'hello from tyler!'
         
     def handle_packet(self, pkt_dir, pkt):
         # The example code here prints out the source/destination IP addresses,
