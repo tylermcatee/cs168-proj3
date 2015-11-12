@@ -163,19 +163,14 @@ class RulesTest(unittest.TestCase):
         self.assertEqual('dns', r.protocol)
         self.assertEqual('*.stanford.edu', r.domain_name)
 
-class GeoIPDBTest(unittest.TestCase):
-    def setUp(self):
-        self.g = GeoIPDB(filename='geoipdb.txt')
-
-    def test_basic(self):
-        pass
+class IPHelperFunctionsTest(unittest.TestCase):
 
     def test_compare_ip_equal(self):
         ips_to_test = ['5.53.0.0', '5.159.215.255', '87.239.95.255',
         '115.42.31.255', '192.190.31.255', '195.226.216.255', '212.101.255.255']
 
         for ip_to_test in ips_to_test:
-            result = self.g.compareIP(ip_to_test, ip_to_test)
+            result = compareIP(ip_to_test, ip_to_test)
             self.assertEqual(0, result)
 
     def test_compare_ip_less(self):
@@ -184,7 +179,7 @@ class GeoIPDBTest(unittest.TestCase):
         '115.42.31.255', '192.190.31.255', '195.226.216.255', '212.101.255.255']
 
         for ip_to_test in ips_to_test:
-            result = self.g.compareIP(ip_less, ip_to_test)
+            result = compareIP(ip_less, ip_to_test)
             self.assertEqual(-1, result)
 
     def test_compare_ip_more(self):
@@ -193,8 +188,31 @@ class GeoIPDBTest(unittest.TestCase):
         '115.42.31.255', '192.190.31.255', '195.226.216.255']
 
         for ip_to_test in ips_to_test:
-            result = self.g.compareIP(ip_more, ip_to_test)
+            result = compareIP(ip_more, ip_to_test)
             self.assertEqual(1, result)
+
+    def test_ip_prefix_to_range_1(self):
+        ip_range = ip_prefix_to_range('192.168.0.0/24')
+        self.assertEqual('192.168.0.0', ip_range[0])
+        self.assertEqual('192.168.0.255', ip_range[1])
+
+    def test_ip_prefix_to_range_2(self):
+        ip_range = ip_prefix_to_range('192.168.0.0/30')
+        self.assertEqual('192.168.0.0', ip_range[0])
+        self.assertEqual('192.168.0.3', ip_range[1])
+
+    def test_ip_prefix_to_range_3(self):
+        ip_range = ip_prefix_to_range('192.168.0.0/16')
+        self.assertEqual('192.168.0.0', ip_range[0])
+        self.assertEqual('192.168.255.255', ip_range[1])
+
+
+class GeoIPDBTest(unittest.TestCase):
+    def setUp(self):
+        self.g = GeoIPDB(filename='geoipdb.txt')
+
+    def test_basic(self):
+        pass
 
     def test_get_country_code_first(self):
         code = self.g.country_code('1.0.0.200')
