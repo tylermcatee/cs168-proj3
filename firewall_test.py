@@ -3,8 +3,8 @@ from firewall import *
 from BinaryPacket import *
 
 empty_rules = 'test_rules/empty.conf'
-no_tcp_rules = 'test_rules/no_tcp.conf'
-no_udp_rules = 'test_rules/no_udp.conf'
+block_all_rules = 'test_rules/no.conf'
+external_ip_drop_rules = 'test_rules/external_ip_drop.conf'
 
 class IntegrationTests(unittest.TestCase):
     """
@@ -30,15 +30,37 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(RULE_RESULT_PASS, result)
 
     def test_tcp_block_incoming_any(self):
-        rules = Rules(no_tcp_rules)
+        rules = Rules(block_all_rules)
         binary_packet = BinaryPacket().get_tcp_packet()
         packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
         result = rules.result_for_pkt(packet)
         self.assertEqual(RULE_RESULT_DROP, result)
 
     def test_tcp_block_outgoing_any(self):
-        rules = Rules(no_tcp_rules)
+        rules = Rules(block_all_rules)
         binary_packet = BinaryPacket().get_tcp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_tcp_drop_external_ip_incoming(self):
+        rules = Rules(external_ip_drop_rules)
+
+        binary_packet = BinaryPacket()
+        binary_packet.source_ip = '128.32.244.17' # This should be blocked
+        binary_packet = binary_packet.get_tcp_packet()
+
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_tcp_drop_external_ip_outgoing(self):
+        rules = Rules(external_ip_drop_rules)
+
+        binary_packet = BinaryPacket()
+        binary_packet.dest_ip = '128.32.244.17' # This should be blocked
+        binary_packet = binary_packet.get_tcp_packet()
+
         packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
         result = rules.result_for_pkt(packet)
         self.assertEqual(RULE_RESULT_DROP, result)
@@ -62,15 +84,91 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(RULE_RESULT_PASS, result)
 
     def test_udp_block_incoming_any(self):
-        rules = Rules(no_udp_rules)
+        rules = Rules(block_all_rules)
         binary_packet = BinaryPacket().get_udp_packet()
         packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
         result = rules.result_for_pkt(packet)
         self.assertEqual(RULE_RESULT_DROP, result)
 
     def test_udp_block_outgoing_any(self):
-        rules = Rules(no_udp_rules)
+        rules = Rules(block_all_rules)
         binary_packet = BinaryPacket().get_udp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_udp_drop_external_ip_incoming(self):
+        rules = Rules(external_ip_drop_rules)
+
+        binary_packet = BinaryPacket()
+        binary_packet.source_ip = '128.32.244.17' # This should be blocked
+        binary_packet = binary_packet.get_udp_packet()
+
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_udp_drop_external_ip_outgoing(self):
+        rules = Rules(external_ip_drop_rules)
+
+        binary_packet = BinaryPacket()
+        binary_packet.dest_ip = '128.32.244.17' # This should be blocked
+        binary_packet = binary_packet.get_udp_packet()
+
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    """
+    ICMP
+    """
+
+    def test_icmp_no_rules_incoming(self):
+        rules = Rules(empty_rules)
+        binary_packet = BinaryPacket().get_icmp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_icmp_no_rules_outgoing(self):
+        rules = Rules(empty_rules)
+        binary_packet = BinaryPacket().get_icmp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_icmp_block_incoming_any(self):
+        rules = Rules(block_all_rules)
+        binary_packet = BinaryPacket().get_icmp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_icmp_block_outgoing_any(self):
+        rules = Rules(block_all_rules)
+        binary_packet = BinaryPacket().get_icmp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_icmp_drop_external_ip_incoming(self):
+        rules = Rules(external_ip_drop_rules)
+
+        binary_packet = BinaryPacket()
+        binary_packet.source_ip = '128.32.244.17' # This should be blocked
+        binary_packet = binary_packet.get_icmp_packet()
+
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_icmp_drop_external_ip_outgoing(self):
+        rules = Rules(external_ip_drop_rules)
+
+        binary_packet = BinaryPacket()
+        binary_packet.dest_ip = '128.32.244.17' # This should be blocked
+        binary_packet = binary_packet.get_icmp_packet()
+
         packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
         result = rules.result_for_pkt(packet)
         self.assertEqual(RULE_RESULT_DROP, result)

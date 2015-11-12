@@ -135,7 +135,10 @@ class Packet:
 
     def get_src_ip(self):
         if not self.src_ip:
-            src_ip = self.pkt[12:16]
+            if self.pkt_dir == PKT_DIR_INCOMING:
+                src_ip = self.pkt[12:16]
+            else:
+                src_ip = self.pkt[16:20]
             self.src_ip = socket.inet_ntoa(src_ip)
         return self.src_ip
 

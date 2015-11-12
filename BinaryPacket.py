@@ -44,6 +44,12 @@ class BinaryPacket:
         self.udp_len = 0
         self.udp_check = 0 # Doesn't matter for this project
 
+        # icmp header fields
+        self.icmp_type = 0
+        self.icmp_code = 0
+        self.icmp_checksum = 0
+        self.icmp_other = 0
+
     def get_ip_header(self):
         self.ip_saddr = socket.inet_aton ( self.source_ip )   #Spoof the source ip address if you want to
         self.ip_daddr = socket.inet_aton ( self.dest_ip )
@@ -61,11 +67,17 @@ class BinaryPacket:
     def get_udp_header(self):
         return pack('!HHHH', self.udp_source, self.udp_dest, self.udp_len, self.udp_check)
 
+    def get_icmp_header(self):
+        return pack('!HHHH', self.icmp_type, self.icmp_code, self.icmp_checksum, self.icmp_other)
+
     # Construct the packets
     def get_tcp_packet(self):
         self.ip_proto = socket.IPPROTO_TCP
         return self.get_ip_header() + self.get_tcp_header()
     def get_udp_packet(self):
         self.ip_proto = socket.IPPROTO_UDP
+        return self.get_ip_header() + self.get_udp_header()
+    def get_icmp_packet(self):
+        self.ip_proto = socket.IPPROTO_ICMP
         return self.get_ip_header() + self.get_udp_header()
 
