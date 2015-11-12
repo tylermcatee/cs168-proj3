@@ -11,6 +11,7 @@ block_any_port = 'test_rules/block_any_port.conf'
 block_single_port = 'test_rules/block_single_port.conf'
 country_block_rules = 'test_rules/country_block.conf'
 block_port_range_rules = 'test_rules/block_port_range.conf'
+block_google_rules = 'test_rules/block_google.conf'
 
 class IntegrationTests(unittest.TestCase):
     """
@@ -662,6 +663,44 @@ class IntegrationTests(unittest.TestCase):
             packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_icmp_packet(), geoDB=None)
             result = rules.result_for_pkt(packet)
             self.assertEqual(RULE_RESULT_DROP, result)
+
+class DNSIntegrationTests(unittest.TestCase):
+
+    def test_dns_outgoing_basic(self):
+        rules = Rules(empty_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_dest = 53
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_dns_incoming_block_google(self):
+        rules = Rules(empty_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_source = 53
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_dns_outgoing_block_google(self):
+        rules = Rules(block_google_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_dest = 53
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_dns_incoming_block_google(self):
+        rules = Rules(block_google_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_source = 53
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
 
 class GeoDBIntegrationTests(unittest.TestCase):
     def setUp(self):

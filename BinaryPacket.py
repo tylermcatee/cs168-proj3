@@ -50,6 +50,20 @@ class BinaryPacket:
         self.icmp_checksum = 0
         self.icmp_other = 0
 
+        # dns header fields
+        self.dns_id = 0 # (2 bytes)
+        self.dns_lflags = 0 # qr, opcode, aa, tc, rd (1 byte)
+        self.dns_rflags = 0 # ra, z, rcode (1 byte)
+        self.dns_qdcount = 1 # (2 bytes)
+        self.dns_ancount = 0 # (2 bytes)
+        self.dns_nscount = 0 # (2 bytes)
+        self.dns_arcount = 0 # (2 bytes)
+
+        self.dns_question = "www.google.com"
+        self.dns_qtype = 1
+        self.dns_qclass = 1
+
+
     def get_ip_header(self):
         self.ip_saddr = socket.inet_aton ( self.source_ip )   #Spoof the source ip address if you want to
         self.ip_daddr = socket.inet_aton ( self.dest_ip )
@@ -70,6 +84,26 @@ class BinaryPacket:
     def get_icmp_header(self):
         return pack('!BBHL', self.icmp_type, self.icmp_code, self.icmp_checksum, self.icmp_other)
 
+    def get_dns_header(self):
+        return pack('!HBBHHHH', self.dns_id, self.dns_lflags, self.dns_rflags, self.dns_qdcount, self.dns_ancount, self.dns_nscount, self.dns_arcount)
+
+    def get_dns_question(self):
+        # Construct the qname from the components
+        dns_comps = self.dns_question.split(".")
+        qname = ""
+        for component in dns_comps:
+            length = len(component)
+            qname += pack('!B', length)
+            for char in component:
+                qname += pack('!B', ord(char))
+        qname += pack('!B', 0)
+        # Get the qtype
+        qtype = pack('!H', self.dns_qtype)
+        # Get the qclass
+        qclass = pack('!H', self.dns_qclass)
+
+        return qname + qtype + qclass
+
     # Construct the packets
     def get_tcp_packet(self):
         self.ip_proto = socket.IPPROTO_TCP
@@ -80,4 +114,7 @@ class BinaryPacket:
     def get_icmp_packet(self):
         self.ip_proto = socket.IPPROTO_ICMP
         return self.get_ip_header() + self.get_icmp_header()
+    def get_dns_packet(self):
+        self.ip_proto = socket.IPPROTO_UDP
+        return self.get_ip_header() + self.get_udp_header() + self.get_dns_header() + self.get_dns_question()
 
