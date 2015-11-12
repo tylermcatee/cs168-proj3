@@ -60,7 +60,7 @@ def ip_prefix_to_range(ip_prefix):
     long_ip = struct.unpack("!L", packedIP)[0]
 
     mask = int(ip_prefix_comps[1])
-    netmask = 4294967040 # How do I get this?
+    netmask = 2**32 - 1 - (2**(32 - mask) - 1)
 
     long_min_ip = (long_ip & netmask)
     long_max_ip = long_min_ip + 2**(32 - mask) - 1
@@ -102,6 +102,10 @@ class Packet:
         self.src_ip = None
         self.country_code = None
         self.src_port = None
+        self.qdcount = None
+        self.qname = None
+        self.qtype = None
+        self.qclass = None
 
     def protocol_number_to_string(self, protocol_number):
         if protocol_number == socket.IPPROTO_TCP:
@@ -144,12 +148,52 @@ class Packet:
         if not self.src_port:
             protocol = self.get_protocol()
             if protocol == socket.IPPROTO_TCP or protocol == socket.IPPROTO_UDP:
-                self.src_port = struct.unpack('!H', self.pkt[20:22])
+                self.src_port = struct.unpack('!H', self.pkt[20:22])[0]
             elif protocol == socket.IPPROTO_ICMP:
-                self.src_port = struct.unpack('!B', self.pkt[20:21])
+                self.src_port = struct.unpack('!B', self.pkt[20:21])[0]
             else:
                 self.src_port = None # Error?!
         return self.src_port
+
+    def get_qdcount(self):
+        if not self.qdcount:
+            self.qdcount = struct.unpack('!H', self.pkt[32:34])[0]
+        return self.qdcount
+
+    def get_qname(self):
+        if not self.qname:
+            length_octet = struct.unpack('!B', self.pkt[40:41])[0]
+            cursor = 41
+            string = ""
+            while(length_octet != 0):
+                string_builder = []
+                while length_octet > 0:
+                    char_byte = struct.unpack('!B', self.pkt[cursor:cursor+1])[0]
+                    string_builder.append(chr(char_byte))
+                    length_octet -= 1
+                    cursor += 1
+                if len(string) == 0:
+                    string = "".join(string_builder)
+                else:
+                    string += "." + "".join(string_builder)
+                length_octet = struct.unpack('!B', self.pkt[cursor:cursor+1])[0]
+                cursor += 1
+
+            self.qname = string
+
+            # Now that we know the end of the qname area we can grab qtype and qclass
+
+        return self.qname
+
+    def get_qtype(self):
+        if not self.qtype:
+            name = self.get_qname()
+        return self.qtype
+
+    def get_qclass(self):
+        if not self.qclass:
+            name = self.get_qname()
+        return self.qclass
 
 """
 Rules
@@ -189,7 +233,7 @@ class Rule:
         else:
             self.type = RULE_TYPE_PIP
             self.external_ip = rule_comps[RULE_EXTERNAL_IP].lower()
-            self.external_port = int(rule_comps[RULE_EXTERNAL_PORT])
+            self.external_port = rule_comps[RULE_EXTERNAL_PORT]
 
 
     def rule_applies(self, packet):
@@ -200,10 +244,7 @@ class Rule:
         if self.type == RULE_TYPE_PIP:
             return self.rule_applies_pip(packet)
         else:
-            """
-            NOT HANDLED YET
-            """
-            return False
+            return self.rule_applies_dns(packet)
 
     def rule_applies_pip(self, packet):
         """
@@ -241,7 +282,7 @@ class Rule:
 
         # If the external port is any, don't do this check
         if self.external_port != RULE_ANY:
-            src_port = int(packet.get_src_port())
+            src_port = packet.get_src_port()
             if '-' in self.external_port:
                 # Looking at a range
                 port_comps = self.external_port.split("-")
@@ -251,10 +292,29 @@ class Rule:
                     return False
             else:
                 # Looking at a single value
-                if src_port != self.external_port:
+                if src_port != int(self.external_port):
                     return False
 
         return True 
+
+    def rule_applies_dns(self, packet):
+        """
+        Handles checking if this rule applies to the packet
+        for a DNS rule.
+        """
+        # DNS rule only applies to udp packets
+        if packet.get_protocol() != socket.IPPROTO_UDP:
+            return False
+        # DNS rule only applies to packets with port 53
+        if packet.get_src_port() != 53:
+            return False
+        # Must have exactly 1 DNS query
+        if packet.get_qdcount() > 1:
+            return False
+
+        qname = packet.get_qname()
+
+        return False
 
 
 class Rules(LineImporter):
