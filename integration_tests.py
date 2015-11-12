@@ -702,6 +702,108 @@ class DNSIntegrationTests(unittest.TestCase):
         result = rules.result_for_pkt(packet)
         self.assertEqual(RULE_RESULT_DROP, result)
 
+    def test_dns_outgoing_requires_one_qcount(self):
+        rules = Rules(block_google_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_dest = 53
+
+        # If the query type is 1 or 28 it should be okay
+        for qcount in range(1, 10):
+            binary_packet.dns_qdcount = qcount
+            packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+            result = rules.result_for_pkt(packet)
+            if qcount == 1:
+                self.assertEqual(RULE_RESULT_DROP, result)
+            else:
+                # The rule wont apply
+                self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_dns_incoming_requires_one_qcount(self):
+        rules = Rules(block_google_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_source = 53
+
+        # If the query type is 1 or 28 it should be okay
+        for qcount in range(1, 10):
+            binary_packet.dns_qdcount = qcount
+            packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+            result = rules.result_for_pkt(packet)
+            if qcount == 1:
+                self.assertEqual(RULE_RESULT_DROP, result)
+            else:
+                # The rule wont apply
+                self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_dns_outgoing_requires_query_type(self):
+        rules = Rules(block_google_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_dest = 53
+
+        # If the query type is 1 or 28 it should be okay
+        for qtype in range(1, 256):
+            binary_packet.dns_qtype = qtype
+            packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+            result = rules.result_for_pkt(packet)
+            if qtype == 1 or qtype == 28:
+                self.assertEqual(RULE_RESULT_DROP, result)
+            else:
+                # The rule wont apply
+                self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_dns_incoming_requires_query_type(self):
+        rules = Rules(block_google_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_source = 53
+
+        # If the query type is 1 or 28 it should be okay
+        for qtype in range(1, 256):
+            binary_packet.dns_qtype = qtype
+            packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+            result = rules.result_for_pkt(packet)
+            if qtype == 1 or qtype == 28:
+                self.assertEqual(RULE_RESULT_DROP, result)
+            else:
+                # The rule wont apply
+                self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_dns_outgoing_requires_qclass_one(self):
+        rules = Rules(block_google_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_dest = 53
+
+        # If the query type is 1 or 28 it should be okay
+        for qclass in range(1, 256):
+            binary_packet.dns_qclass = qclass
+            packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+            result = rules.result_for_pkt(packet)
+            if qclass == 1:
+                self.assertEqual(RULE_RESULT_DROP, result)
+            else:
+                # The rule wont apply
+                self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_dns_incoming_requires_qclass_one(self):
+        rules = Rules(block_google_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_source = 53
+
+        # If the query type is 1 or 28 it should be okay
+        for qclass in range(1, 256):
+            binary_packet.dns_qclass = qclass
+            packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+            result = rules.result_for_pkt(packet)
+            if qclass == 1:
+                self.assertEqual(RULE_RESULT_DROP, result)
+            else:
+                # The rule wont apply
+                self.assertEqual(RULE_RESULT_PASS, result)
+
 class GeoDBIntegrationTests(unittest.TestCase):
     def setUp(self):
         # Use the actual one, we have tested this object
