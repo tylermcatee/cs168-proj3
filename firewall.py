@@ -182,6 +182,9 @@ class Packet:
             self.qname = string
 
             # Now that we know the end of the qname area we can grab qtype and qclass
+            self.qtype = struct.unpack('!H', self.pkt[cursor:cursor+2])[0]
+            cursor += 2
+            self.qclass = struct.unpack('!H', self.pkt[cursor:cursor+2])[0]
 
         return self.qname
 
@@ -313,8 +316,50 @@ class Rule:
             return False
 
         qname = packet.get_qname()
+        qtype = packet.get_qtype()
+        qclass = packet.get_qclass()
 
-        return False
+        # Must have qtype 1 or 28
+        if qtype != 1 and qtype != 28:
+            return False
+
+        # Must have qclass 1
+        if qclass != 1:
+            return False
+
+        # Now check to make sure we aren't matching
+        qcomponents = qname.split(".")
+        rcomponents = self.domain_name.split(".")
+        
+        # Full domain name requires exact match
+        if len(rcomponents) == 3:
+            if len(qcomponents) != 3:
+                return False
+            if qcomponents[0] != rcomponents[0] or rcomponents[0] != '*':
+                # If they equal each other will fall through and return true
+                # OR if rcomponents[0] is * will fall through
+                return False
+            if qcomponents[1] != rcomponents[1]:
+                return False
+            if qcomponents[2] != rcomponents[2]:
+                return False
+        if len(rcomponents) == 2:
+            if len(qcomponents) == 3:
+                if rcomponents[1] != qcomponents[2]:
+                    # i.e. *.gov and www.google.com
+                    return False
+                if rcomponents[0] != '*' and rcomponents[0] != qcomponents[1]:
+                    # i.e. students.gov and www.google.com
+                    return False
+            else:
+                if rcomponents[1] != qcomponents[1]:
+                    # i.e. *.gov and google.com
+                    return False
+                if rcomponents[0] != '*' and rcomponents[0] != qcomponents[0]:
+                    # i.e. students.gov and heathcare.gov
+                    return False
+
+        return True
 
 
 class Rules(LineImporter):
