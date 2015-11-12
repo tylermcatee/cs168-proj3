@@ -5,6 +5,7 @@ from BinaryPacket import *
 empty_rules = 'test_rules/empty.conf'
 block_all_rules = 'test_rules/no.conf'
 external_ip_drop_rules = 'test_rules/external_ip_drop.conf'
+external_ip_prefix_drop_rules = 'test_rules/external_ip_prefix_drop.conf'
 
 class IntegrationTests(unittest.TestCase):
     """
@@ -65,6 +66,52 @@ class IntegrationTests(unittest.TestCase):
         result = rules.result_for_pkt(packet)
         self.assertEqual(RULE_RESULT_DROP, result)
 
+    def test_tcp_drop_external_ip_prefix_incoming(self):
+        rules = Rules(external_ip_prefix_drop_rules)
+
+        binary_packet = BinaryPacket()
+
+        # Test edge 1
+        binary_packet.source_ip = '123.34.128.0' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_tcp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test middle
+        binary_packet.source_ip = '123.34.200.194' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_tcp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test edge 2
+        binary_packet.source_ip = '123.34.255.255' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_tcp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_tcp_drop_external_ip_prefix_outgoing(self):
+        rules = Rules(external_ip_prefix_drop_rules)
+
+        binary_packet = BinaryPacket()
+
+        # Test edge 1
+        binary_packet.dest_ip = '123.34.128.0' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_tcp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test middle
+        binary_packet.dest_ip = '123.34.212.2' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_tcp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test edge 2
+        binary_packet.dest_ip = '123.34.255.255' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_tcp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
     """
     UDP
     """
@@ -119,6 +166,52 @@ class IntegrationTests(unittest.TestCase):
         result = rules.result_for_pkt(packet)
         self.assertEqual(RULE_RESULT_DROP, result)
 
+    def test_udp_drop_external_ip_prefix_incoming(self):
+        rules = Rules(external_ip_prefix_drop_rules)
+
+        binary_packet = BinaryPacket()
+
+        # Test edge 1
+        binary_packet.source_ip = '123.34.128.0' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_udp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test middle
+        binary_packet.source_ip = '123.34.129.1' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_udp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test edge 2
+        binary_packet.source_ip = '123.34.255.255' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_udp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_udp_drop_external_ip_prefix_outgoing(self):
+        rules = Rules(external_ip_prefix_drop_rules)
+
+        binary_packet = BinaryPacket()
+
+        # Test edge 1
+        binary_packet.dest_ip = '123.34.128.0' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_udp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test middle
+        binary_packet.dest_ip = '123.34.252.255' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_udp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test edge 2
+        binary_packet.dest_ip = '123.34.255.255' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_udp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
     """
     ICMP
     """
@@ -170,6 +263,52 @@ class IntegrationTests(unittest.TestCase):
         binary_packet = binary_packet.get_icmp_packet()
 
         packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_icmp_drop_external_ip_prefix_incoming(self):
+        rules = Rules(external_ip_prefix_drop_rules)
+
+        binary_packet = BinaryPacket()
+
+        # Test edge 1
+        binary_packet.source_ip = '123.34.128.0' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_icmp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test middle
+        binary_packet.source_ip = '123.34.128.1' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_icmp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test edge 2
+        binary_packet.source_ip = '123.34.255.255' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_icmp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_icmp_drop_external_ip_prefix_outgoing(self):
+        rules = Rules(external_ip_prefix_drop_rules)
+
+        binary_packet = BinaryPacket()
+
+        # Test edge 1
+        binary_packet.dest_ip = '123.34.128.0' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_icmp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test middle
+        binary_packet.dest_ip = '123.34.252.255' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_icmp_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        # Test edge 2
+        binary_packet.dest_ip = '123.34.255.255' # This should be blocked
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet.get_icmp_packet(), geoDB=None)
         result = rules.result_for_pkt(packet)
         self.assertEqual(RULE_RESULT_DROP, result)
 
@@ -378,6 +517,11 @@ class IPHelperFunctionsTest(unittest.TestCase):
         ip_range = ip_prefix_to_range('192.168.0.0/16')
         self.assertEqual('192.168.0.0', ip_range[0])
         self.assertEqual('192.168.255.255', ip_range[1])
+
+    def test_ip_prefix_to_range_4(self):
+        ip_range = ip_prefix_to_range('0.0.0.0/0')
+        self.assertEqual('0.0.0.0', ip_range[0])
+        self.assertEqual('255.255.255.255', ip_range[1])
 
 
 class GeoIPDBTest(unittest.TestCase):
