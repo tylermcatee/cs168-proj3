@@ -364,7 +364,7 @@ class Rule:
 
 class Rules(LineImporter):
 
-    def __init__(self, filename):
+    def __init__(self, filename=None):
         self.rules = []
         # Call the import function
         super(Rules, self).import_filename(filename)

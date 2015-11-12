@@ -1,5 +1,80 @@
 import unittest
 from firewall import *
+from BinaryPacket import *
+
+empty_rules = 'test_rules/empty.conf'
+no_tcp_rules = 'test_rules/no_tcp.conf'
+no_udp_rules = 'test_rules/no_udp.conf'
+
+class IntegrationTests(unittest.TestCase):
+    """
+    Seeing if I can figure out why my code isn't passing all of the autograder
+    """
+
+    """
+    TCP
+    """
+
+    def test_tcp_no_rules_incoming(self):
+        rules = Rules(empty_rules)
+        binary_packet = BinaryPacket().get_tcp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_tcp_no_rules_outgoing(self):
+        rules = Rules(empty_rules)
+        binary_packet = BinaryPacket().get_tcp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_tcp_block_incoming_any(self):
+        rules = Rules(no_tcp_rules)
+        binary_packet = BinaryPacket().get_tcp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_tcp_block_outgoing_any(self):
+        rules = Rules(no_tcp_rules)
+        binary_packet = BinaryPacket().get_tcp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    """
+    UDP
+    """
+
+    def test_udp_no_rules_incoming(self):
+        rules = Rules(empty_rules)
+        binary_packet = BinaryPacket().get_udp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_udp_no_rules_outgoing(self):
+        rules = Rules(empty_rules)
+        binary_packet = BinaryPacket().get_udp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_udp_block_incoming_any(self):
+        rules = Rules(no_udp_rules)
+        binary_packet = BinaryPacket().get_udp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_udp_block_outgoing_any(self):
+        rules = Rules(no_udp_rules)
+        binary_packet = BinaryPacket().get_udp_packet()
+        packet = Packet(pkt_dir=PKT_DIR_OUTGOING, pkt=binary_packet, geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
 
 class RuleTest(unittest.TestCase):
     """
