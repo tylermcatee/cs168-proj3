@@ -142,7 +142,13 @@ class Packet:
 
     def get_src_port(self):
         if not self.src_port:
-            self.src_port = struct.unpack('!H', self.pkt[20:22])
+            protocol = self.get_protocol()
+            if protocol == socket.IPPROTO_TCP or protocol == socket.IPPROTO_UDP:
+                self.src_port = struct.unpack('!H', self.pkt[20:22])
+            elif protocol == socket.IPPROTO_ICMP:
+                self.src_port = struct.unpack('!B', self.pkt[20:21])
+            else:
+                self.src_port = None # Error?!
         return self.src_port
 
 """
@@ -183,7 +189,7 @@ class Rule:
         else:
             self.type = RULE_TYPE_PIP
             self.external_ip = rule_comps[RULE_EXTERNAL_IP].lower()
-            self.external_port = rule_comps[RULE_EXTERNAL_PORT]
+            self.external_port = int(rule_comps[RULE_EXTERNAL_PORT])
 
 
     def rule_applies(self, packet):
@@ -235,11 +241,18 @@ class Rule:
 
         # If the external port is any, don't do this check
         if self.external_port != RULE_ANY:
-            src_port = packet.get_src_port()
-            print("Need to look at port %s" % src_port)
-            return False
-
-        print("RULE APPLIES: %s %s %s %s" % (self.verdict, self.protocol, self.external_ip, self.external_port))
+            src_port = int(packet.get_src_port())
+            if '-' in self.external_port:
+                # Looking at a range
+                port_comps = self.external_port.split("-")
+                min_port = int(port_comps[0])
+                max_port = int(port_comps[1])
+                if src_port < min_port or src_port > max_port:
+                    return False
+            else:
+                # Looking at a single value
+                if src_port != self.external_port:
+                    return False
 
         return True 
 
