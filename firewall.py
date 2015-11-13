@@ -107,6 +107,9 @@ class Packet:
         self.qtype = None
         self.qclass = None
 
+        # Incase of ipoptions
+        self.ip_end_byte = None # Default
+
     def protocol_number_to_string(self, protocol_number):
         if protocol_number == socket.IPPROTO_TCP:
             return 'tcp'
@@ -115,6 +118,15 @@ class Packet:
         if protocol_number == socket.IPPROTO_ICMP:
             return 'icmp'
         return NOT_DEFINED
+
+    def get_ip_end_byte(self):
+        if not self.ip_end_byte:
+            # Get the IHL
+            version_ihl = struct.unpack('!B', self.pkt[0:1])[0]
+            # Mask to get just the ihl
+            ihl = version_ihl & 15
+            self.ip_end_byte = ihl * 4
+        return self.ip_end_byte
 
     def get_protocol(self):
         if not self.protocol:
@@ -152,25 +164,25 @@ class Packet:
             protocol = self.get_protocol()
             if protocol == socket.IPPROTO_TCP or protocol == socket.IPPROTO_UDP:
                 if self.pkt_dir == PKT_DIR_INCOMING:
-                    self.src_port = struct.unpack('!H', self.pkt[20:22])[0]
+                    self.src_port = struct.unpack('!H', self.pkt[self.get_ip_end_byte():self.get_ip_end_byte() + 2])[0]
                 else:
-                    self.src_port = struct.unpack('!H', self.pkt[22:24])[0]
+                    self.src_port = struct.unpack('!H', self.pkt[self.get_ip_end_byte() + 2:self.get_ip_end_byte() + 4])[0]
 
             elif protocol == socket.IPPROTO_ICMP:
-                self.src_port = struct.unpack('!B', self.pkt[20:21])[0]
+                self.src_port = struct.unpack('!B', self.pkt[self.get_ip_end_byte():self.get_ip_end_byte() + 1])[0]
             else:
                 self.src_port = None # Error?!
         return self.src_port
 
     def get_qdcount(self):
         if not self.qdcount:
-            self.qdcount = struct.unpack('!H', self.pkt[32:34])[0]
+            self.qdcount = struct.unpack('!H', self.pkt[self.get_ip_end_byte() + 12:self.get_ip_end_byte() + 14])[0]
         return self.qdcount
 
     def get_qname(self):
         if not self.qname:
-            length_octet = struct.unpack('!B', self.pkt[40:41])[0]
-            cursor = 41
+            length_octet = struct.unpack('!B', self.pkt[self.get_ip_end_byte() + 20:self.get_ip_end_byte() + 21])[0]
+            cursor = self.get_ip_end_byte() + 21
             string = ""
             while(length_octet != 0):
                 string_builder = []
