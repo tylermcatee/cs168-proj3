@@ -12,6 +12,11 @@ block_single_port = 'test_rules/block_single_port.conf'
 country_block_rules = 'test_rules/country_block.conf'
 block_port_range_rules = 'test_rules/block_port_range.conf'
 block_google_rules = 'test_rules/block_google.conf'
+block_all_dns_rules = 'test_rules/block_all_dns.conf'
+block_full_domain_name_rules = 'test_rules/block_full_domain_name.conf'
+block_two_domain_name_rules = 'test_rules/block_two_domain_name.conf'
+block_three_domain_name_rules = 'test_rules/block_three_domain_name.conf'
+block_dns_weird_spelling_rules = 'test_rules/block_dns_weird_spelling.conf'
 
 class IntegrationTests(unittest.TestCase):
     """
@@ -803,6 +808,67 @@ class DNSIntegrationTests(unittest.TestCase):
             else:
                 # The rule wont apply
                 self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_dns_block_all(self):
+        rules = Rules(block_all_dns_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.udp_source = 53
+        questions = ["www.google.com", "www.facebook.com", "berkeley.edu"]
+        for question in questions:
+            binary_packet.dns_question = question
+            packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+            result = rules.result_for_pkt(packet)
+            self.assertEqual(RULE_RESULT_DROP, result)
+
+    def test_dns_block_full_domain_name(self):
+        rules = Rules(block_full_domain_name_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.udp_source = 53
+
+        binary_packet.dns_question = 'images.google.com' # Shouldn't block
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_PASS, result)
+
+        binary_packet.dns_question = 'www.google.com' # Should block
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+
+    def test_dns_block_two_domain_name(self):
+        rules = Rules(block_two_domain_name_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.udp_source = 53
+
+        binary_packet.dns_question = 'fda.gov' # Should block
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        binary_packet.dns_question = 'www.fda.gov' # Should block
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+
+    def test_dns_block_three_domain_name(self):
+        rules = Rules(block_three_domain_name_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.udp_source = 53
+
+        binary_packet.dns_question = 'www.foo.com' # Should block
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
+
+        binary_packet.dns_question = 'foo.com' # SHOULDNT block
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_PASS, result)
+
+    def test_dns_incoming_block_weird_spelling(self):
+        rules = Rules(block_dns_weird_spelling_rules)
+        binary_packet = BinaryPacket()
+        binary_packet.dns_question = "www.google.com"
+        binary_packet.udp_source = 53
+        packet = Packet(pkt_dir=PKT_DIR_INCOMING, pkt=binary_packet.get_dns_packet(), geoDB=None)
+        result = rules.result_for_pkt(packet)
+        self.assertEqual(RULE_RESULT_DROP, result)
 
 class GeoDBIntegrationTests(unittest.TestCase):
     def setUp(self):

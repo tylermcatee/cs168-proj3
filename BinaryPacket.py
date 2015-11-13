@@ -12,7 +12,7 @@ class BinaryPacket:
         self.dest_ip = '192.168.1.1'
          
         # ip header fields
-        self.ip_ihl = 5
+        self.ip_ihl = 5 # For options!
         self.ip_ver = 4
         self.ip_tos = 0
         self.ip_tot_len = 0  # kernel will fill the correct total length

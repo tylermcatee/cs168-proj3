@@ -335,36 +335,28 @@ class Rule:
             return False
 
         # Now check to make sure we aren't matching
-        qcomponents = qname.split(".")
-        rcomponents = self.domain_name.split(".")
-        
-        # Full domain name requires exact match
-        if len(rcomponents) == 3:
-            if len(qcomponents) != 3:
-                return False
-            if qcomponents[0] != rcomponents[0] or rcomponents[0] != '*':
-                # If they equal each other will fall through and return true
-                # OR if rcomponents[0] is * will fall through
-                return False
-            if qcomponents[1] != rcomponents[1]:
-                return False
-            if qcomponents[2] != rcomponents[2]:
-                return False
-        if len(rcomponents) == 2:
-            if len(qcomponents) == 3:
-                if rcomponents[1] != qcomponents[2]:
-                    # i.e. *.gov and www.google.com
+        rule_components = [component.lower() for component in self.domain_name.split(".")]
+        question_components = [component.lower() for component in qname.split(".")]
+
+        # Left pad the components
+        missing_rule_length = 3 - len(rule_components)
+        missing_question_length = 3 - len(question_components)
+
+        for _ in range(missing_rule_length):
+            rule_components = ['!'] + rule_components
+        for _ in range(missing_question_length):
+            question_components = ['!'] + question_components
+
+        # Now that they are both the same size, look from the right to the left
+        for idx in range(3)[::-1]:
+            if rule_components[idx] == '*':
+                if question_components[idx] == '!':
                     return False
-                if rcomponents[0] != '*' and rcomponents[0] != qcomponents[1]:
-                    # i.e. students.gov and www.google.com
-                    return False
+                else:
+                    return True # Matches anything
             else:
-                if rcomponents[1] != qcomponents[1]:
-                    # i.e. *.gov and google.com
-                    return False
-                if rcomponents[0] != '*' and rcomponents[0] != qcomponents[0]:
-                    # i.e. students.gov and heathcare.gov
-                    return False
+                if rule_components[idx] != question_components[idx]:
+                    return False # Does not match]
 
         return True
 
